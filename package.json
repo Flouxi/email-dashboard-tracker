@@ -1,0 +1,15 @@
+{
+  "name": "email-tracking-dashboard",
+  "version": "1.0.0",
+  "description": "Self-hosted email open/click tracking backend + dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.1",
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
+  }
+}

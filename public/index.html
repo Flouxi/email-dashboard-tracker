@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manifest — Send Tracking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1220;
+    --panel:#121B2E;
+    --panel-2:#182238;
+    --line:#26324A;
+    --paper:#EDE7D9;
+    --wax:#B3401F;
+    --wax-dim:#7A2C15;
+    --ok:#4FA98B;
+    --muted:#7C8AA5;
+    --text:#E8E9EE;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 28px 80px}
+
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1px solid var(--line);
+    padding-bottom:24px;margin-bottom:36px;
+    gap:20px;flex-wrap:wrap;
+  }
+  .brand-eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:6px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;font-size:34px;margin:0;
+    letter-spacing:-0.01em;
+  }
+  .toolbar{display:flex;gap:10px;align-items:center;}
+  select,input[type=text]{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:9px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12.5px;
+  }
+  button{
+    background:var(--wax);color:#fff;border:none;padding:9px 16px;border-radius:6px;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.03em;cursor:pointer;
+  }
+  button:hover{background:var(--wax-dim)}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px;}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+  .stat{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:20px 20px 18px;position:relative;overflow:hidden;
+  }
+  .stat .label{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px;
+  }
+  .stat .value{font-family:'Fraunces',serif;font-size:36px;font-weight:600;}
+  .stat .sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  /* signature element: postmark stamp for open rate */
+  .postmark{
+    position:absolute;top:14px;right:14px;width:64px;height:64px;
+    border:2px solid var(--wax);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-8deg);opacity:.9;
+  }
+  .postmark::before{
+    content:'';position:absolute;inset:6px;border:1px dashed var(--wax);border-radius:50%;
+  }
+  .postmark span{
+    font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;color:var(--wax);
+  }
+
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  }
+  .panel-head{
+    padding:16px 20px;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .panel-head h2{
+    font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0;
+  }
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-size:10.5px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    padding:12px 20px;border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:12px 20px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--panel-2)}
+  .email-cell{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;border-radius:20px;
+  }
+  .badge.opened{background:rgba(79,169,139,.15);color:var(--ok);}
+  .badge.pending{background:rgba(124,138,165,.15);color:var(--muted);}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .count{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:12px;}
+  .empty{padding:60px 20px;text-align:center;color:var(--muted);}
+  .empty .big{font-family:'Fraunces',serif;font-size:20px;color:var(--text);margin-bottom:6px;}
+  .key-gate{
+    max-width:420px;margin:120px auto;text-align:center;
+  }
+  .key-gate input{width:100%;margin:16px 0;text-align:center;}
+  footer{margin-top:28px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="empty" style="margin-top:120px">Loading manifest…</div>
+</div>
+
+<script>
+const API_KEY_STORAGE = 'tracking_dashboard_key';
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' · ' +
+         d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+
+async function apiFetch(path){
+  const key = localStorage.getItem(API_KEY_STORAGE) || '';
+  const res = await fetch(path + (path.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(key));
+  if(res.status === 401) throw new Error('unauthorized');
+  return res.json();
+}
+
+function renderKeyGate(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="key-gate">
+      <div class="brand-eyebrow">Manifest</div>
+      <h1>Enter dashboard key</h1>
+      <input type="text" id="keyInput" placeholder="dashboard secret" />
+      <button onclick="submitKey()">Unlock</button>
+    </div>`;
+}
+
+function submitKey(){
+  const val = document.getElementById('keyInput').value.trim();
+  localStorage.setItem(API_KEY_STORAGE, val);
+  boot();
+}
+
+function statCard(label, value, sub, stamp){
+  return `
+    <div class="stat">
+      ${stamp ? `<div class="postmark"><span>${stamp}</span></div>` : ''}
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+      <div class="sub">${sub || ''}</div>
+    </div>`;
+}
+
+function renderDashboard(data){
+  const s = data.summary;
+  const app = document.getElementById('app');
+
+  const campaignOptions = ['<option value="">All campaigns</option>']
+    .concat(data.campaigns.map(c => `<option value="${c}">${c}</option>`))
+    .join('');
+
+  const rows = data.records.length ? data.records.map(r => `
+    <tr>
+      <td class="email-cell">${r.email}</td>
+      <td class="count">${r.campaign}</td>
+      <td class="count">${fmtDate(r.sentAt)}</td>
+      <td>
+        ${r.opened
+          ? `<span class="badge opened"><span class="dot"></span>Opened</span>`
+          : `<span class="badge pending"><span class="dot"></span>Not opened</span>`}
+      </td>
+      <td class="count">${r.openCount}</td>
+      <td class="count">${r.clickCount}</td>
+      <td class="count">${fmtDate(r.lastOpenAt)}</td>
+    </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="big">No sends tracked yet</div>Tracking pixels and links will appear here once your campaign goes out.</div></td></tr>`;
+
+  app.innerHTML = `
+    <header>
+      <div>
+        <div class="brand-eyebrow">Manifest · Send Tracking</div>
+        <h1>Delivery Log</h1>
+      </div>
+      <div class="toolbar">
+        <select id="campaignFilter">${campaignOptions}</select>
+        <button onclick="boot()">Refresh</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      ${statCard('Sent', s.totalSent)}
+      ${statCard('Opened', s.totalOpened, s.openRate + '% open rate', s.openRate + '%')}
+      ${statCard('Clicked', s.totalClicked, s.clickRate + '% click rate')}
+      ${statCard('Total Events', s.totalOpenEvents + s.totalClickEvents, s.totalOpenEvents + ' opens · ' + s.totalClickEvents + ' clicks')}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Recipients</h2>
+        <span class="count">${data.records.length} shown</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Recipient</th><th>Campaign</th><th>Sent</th><th>Status</th>
+            <th>Opens</th><th>Clicks</th><th>Last open</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <footer>manifest tracking · self-hosted</footer>
+  `;
+
+  document.getElementById('campaignFilter').addEventListener('change', (e) => {
+    boot(e.target.value);
+  });
+}
+
+async function boot(campaign){
+  try{
+    const q = campaign ? '/api/stats?campaign=' + encodeURIComponent(campaign) : '/api/stats';
+    const data = await apiFetch(q);
+    renderDashboard(data);
+  }catch(err){
+    if(err.message === 'unauthorized'){
+      renderKeyGate();
+    }else{
+      document.getElementById('app').innerHTML = `<div class="empty" style="margin-top:120px">Couldn't load data. Check the server is running.</div>`;
+    }
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
