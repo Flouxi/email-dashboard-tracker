@@ -36,7 +36,25 @@ Visit `http://localhost:3000` — it'll prompt for your `DASHBOARD_SECRET` and s
 
 Your tracking base URL is then `https://n8n.iptvnord4k.com`.
 
-## 3. Generate tracking links for a recipient list
+## 3. Belkorchi Massmail Pro's built-in tracker (this is the path you'll actually use)
+
+Belkorchi's **Tracking** tab has its own "Setup Tracking" feature. It doesn't support per-recipient merge tags — it generates a fixed PHP snippet that calls one URL with only a bare `?email=...` param, expecting a 1×1 gif back. This server answers that exact contract, no PHP needed:
+
+1. In Belkorchi's **Tracking** tab, set **Tracking URL** to `https://n8n.iptvnord4k.com`, click **Setup Tracking**.
+2. Ignore the PHP file/folder instructions in the popup — you don't need to create anything on a separate PHP host.
+3. Where Belkorchi asks you to "enter the full URL below once setup," enter:
+   ```
+   https://n8n.iptvnord4k.com/tracker/track.php
+   ```
+4. Send your campaign as normal. Every open pings that URL with the recipient's email; you'll see it land on the dashboard's **Belkorchi Opens** view (the default tab).
+
+This only reports *who opened* — Belkorchi's simple pixel doesn't tell the tracker how many were sent, so there's no open-rate % on this view, just counts and timestamps per recipient.
+
+## 4. (Optional) Advanced click tracking via generate-links.js
+
+Belkorchi's built-in tracker only does opens, not link clicks. If you also want click tracking, you'd need Belkorchi to support per-recipient merge tags in the Email Template itself (separate from its Tracking tab) — check its docs for that. If it does, this repo still includes a self-contained token system for that path:
+
+### Generate tracking links for a recipient list
 
 ```bash
 node scripts/generate-links.js customers_import.csv customers_tracked.csv https://n8n.iptvnord4k.com "july-campaign"

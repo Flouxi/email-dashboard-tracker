@@ -135,6 +135,8 @@ function fmtDate(iso){
          d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
 }
 
+let currentView = 'opens'; // 'opens' = Belkorchi's built-in pixel data (default) | 'advanced' = token-based link tracking
+
 async function apiFetch(path){
   const key = localStorage.getItem(API_KEY_STORAGE) || '';
   const res = await fetch(path + (path.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(key));
@@ -169,7 +171,68 @@ function statCard(label, value, sub, stamp){
     </div>`;
 }
 
-function renderDashboard(data){
+function viewToggle(){
+  return `
+    <div class="toolbar" style="margin-right:12px">
+      <select id="viewSelect">
+        <option value="opens" ${currentView==='opens' ? 'selected' : ''}>Belkorchi Opens</option>
+        <option value="advanced" ${currentView==='advanced' ? 'selected' : ''}>Advanced (links/clicks)</option>
+      </select>
+    </div>`;
+}
+
+function renderOpens(data){
+  const s = data.summary;
+  const app = document.getElementById('app');
+
+  const rows = data.records.length ? data.records.map(r => `
+    <tr>
+      <td class="email-cell">${r.email}</td>
+      <td class="count">${r.openCount}</td>
+      <td class="count">${fmtDate(r.firstOpenAt)}</td>
+      <td class="count">${fmtDate(r.lastOpenAt)}</td>
+      <td class="count">${r.ips.join(', ') || '—'}</td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty"><div class="big">No opens yet</div>This fills in as recipients open your emails via Belkorchi's tracking pixel.</div></td></tr>`;
+
+  app.innerHTML = `
+    <header>
+      <div>
+        <div class="brand-eyebrow">Manifest · Belkorchi Tracking</div>
+        <h1>Opens Log</h1>
+      </div>
+      <div class="toolbar">
+        ${viewToggle()}
+        <button onclick="boot()">Refresh</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      ${statCard('Recipients opened', s.totalRecipientsOpened)}
+      ${statCard('Total open events', s.totalOpenEvents, 'includes repeat opens')}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Who opened</h2>
+        <span class="count">${data.records.length} shown</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Recipient</th><th>Opens</th><th>First open</th><th>Last open</th><th>IP(s)</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <footer>manifest tracking · self-hosted · note: this only counts recipients who opened — Belkorchi's built-in pixel doesn't report total sent, so no open-rate % is shown here</footer>
+  `;
+
+  document.getElementById('viewSelect').addEventListener('change', (e) => {
+    currentView = e.target.value;
+    boot();
+  });
+}
+
+function renderAdvanced(data){
   const s = data.summary;
   const app = document.getElementById('app');
 
@@ -190,7 +253,7 @@ function renderDashboard(data){
       <td class="count">${r.openCount}</td>
       <td class="count">${r.clickCount}</td>
       <td class="count">${fmtDate(r.lastOpenAt)}</td>
-    </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="big">No sends tracked yet</div>Tracking pixels and links will appear here once your campaign goes out.</div></td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="big">No sends tracked yet</div>Only populated if you use scripts/generate-links.js + manually inserted merge tags — most Belkorchi setups won't use this view.</div></td></tr>`;
 
   app.innerHTML = `
     <header>
@@ -199,6 +262,7 @@ function renderDashboard(data){
         <h1>Delivery Log</h1>
       </div>
       <div class="toolbar">
+        ${viewToggle()}
         <select id="campaignFilter">${campaignOptions}</select>
         <button onclick="boot()">Refresh</button>
       </div>
@@ -229,6 +293,10 @@ function renderDashboard(data){
     <footer>manifest tracking · self-hosted</footer>
   `;
 
+  document.getElementById('viewSelect').addEventListener('change', (e) => {
+    currentView = e.target.value;
+    boot();
+  });
   document.getElementById('campaignFilter').addEventListener('change', (e) => {
     boot(e.target.value);
   });
@@ -236,9 +304,14 @@ function renderDashboard(data){
 
 async function boot(campaign){
   try{
-    const q = campaign ? '/api/stats?campaign=' + encodeURIComponent(campaign) : '/api/stats';
-    const data = await apiFetch(q);
-    renderDashboard(data);
+    if(currentView === 'opens'){
+      const data = await apiFetch('/api/opens');
+      renderOpens(data);
+    }else{
+      const q = campaign ? '/api/stats?campaign=' + encodeURIComponent(campaign) : '/api/stats';
+      const data = await apiFetch(q);
+      renderAdvanced(data);
+    }
   }catch(err){
     if(err.message === 'unauthorized'){
       renderKeyGate();

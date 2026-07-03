@@ -61,6 +61,47 @@ app.get('/t/c/:token', async (req, res) => {
   res.status(400).send('Missing or invalid redirect url');
 });
 
+// ---- Belkorchi Massmail Pro's built-in tracker ----
+// Belkorchi's "Setup Tracking" feature generates its own pixel code and
+// calls a FIXED url with only a bare `email` query param — no token, no
+// campaign, no click tracking. This route matches that exact contract.
+// Enter this full URL in Belkorchi's "Tracking URL" field:
+//   https://n8n.iptvnord4k.com/tracker/track.php
+app.get('/tracker/track.php', async (req, res) => {
+  const email = req.query.email;
+  const ip =
+    (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
+  if (email) {
+    try {
+      await store.logRawOpen(email, ip);
+    } catch (err) {
+      console.error('belkorchi open tracking error', err);
+    }
+  }
+  res.set('Content-Type', 'image/gif');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.send(PIXEL);
+});
+
+app.get('/api/opens', requireKey, async (req, res) => {
+  const all = await store.getRawOpens();
+  const totalOpenEvents = all.reduce((n, r) => n + r.opens.length, 0);
+
+  res.json({
+    summary: {
+      totalRecipientsOpened: all.length,
+      totalOpenEvents,
+    },
+    records: all.map((r) => ({
+      email: r.email,
+      openCount: r.opens.length,
+      firstOpenAt: r.opens[0]?.at || null,
+      lastOpenAt: r.opens[r.opens.length - 1]?.at || null,
+      ips: [...new Set(r.opens.map((o) => o.ip))],
+    })),
+  });
+});
+
 // ---- API: generate tracking links for a recipient (used by generate-links script) ----
 app.post('/api/token', requireKey, (req, res) => {
   const { email, campaign } = req.body || {};
